@@ -1,6 +1,6 @@
-# Sample Hardhat Project
+# Algorithmic stable coin
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
+algo stable Maintains its peg By getting price from Oracle and allows users to mint and burn tokens as price Fluctuates
 
 Try running some of the following tasks:
 

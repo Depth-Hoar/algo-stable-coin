@@ -14,10 +14,12 @@ contract DepthStable is ERC20 {
     uint256 public feeRatePercentage;
     uint256 public constant INITIAL_COLLATERAL_RATIO_PERCENTAGE = 10;
 
+    event DepositorCoinMinted(WadLib.Wad dpcInUsdPrice);
+
     constructor(
         uint256 _feeRatePercentage,
         Oracle _oracle
-    ) ERC20("DepthStable", "STC") {
+    ) ERC20("DepthStable", "DUSD") {
         feeRatePercentage = _feeRatePercentage;
         oracle = _oracle;
     }
@@ -34,7 +36,7 @@ contract DepthStable is ERC20 {
         int256 deficitOrSurplusInUsd = _getDeficitOrSurplusInContractInUsd();
         require(
             deficitOrSurplusInUsd >= 0,
-            "STC: Cannot burn while in deficit"
+            "DUSD: Cannot burn while in deficit"
         );
 
         _burn(msg.sender, burnDepthStableAmount);
@@ -44,7 +46,7 @@ contract DepthStable is ERC20 {
         uint256 remainingRefundingEth = refundingEth - fee;
 
         (bool success, ) = msg.sender.call{value: remainingRefundingEth}("");
-        require(success, "STC: Burn refund transaction failed");
+        require(success, "DUSD: Burn refund transaction failed");
     }
 
     function _getFee(uint256 ethAmount) private view returns (uint256) {
@@ -73,7 +75,7 @@ contract DepthStable is ERC20 {
             if (msg.value < deficitInEth + requiredInitialSurplusInEth) {
                 uint256 minimumDepositAmount = deficitInEth +
                     requiredInitialSurplusInEth;
-                revert("STC: Initial collateral ratio not met");
+                revert("DUSD: Initial collateral ratio not met");
             }
 
             uint256 newInitialSurplusInEth = msg.value - deficitInEth;
@@ -88,11 +90,13 @@ contract DepthStable is ERC20 {
         }
 
         uint256 surplusInUsd = uint256(deficitOrSurplusInUsd);
-        WadLib.Wad dpcInUsdPrice = _getDPCinUsdPrice(surplusInUsd);
+        WadLib.Wad dpcInUsdPrice = _getDEPCinUsdPrice(surplusInUsd);
         uint256 mintDepositorCoinAmount = ((msg.value.mulWad(dpcInUsdPrice)) /
             oracle.getPrice());
 
         depositorCoin.mint(msg.sender, mintDepositorCoinAmount);
+
+        emit DepositorCoinMinted(dpcInUsdPrice);
     }
 
     function withdrawCollateralBuffer(
@@ -100,21 +104,21 @@ contract DepthStable is ERC20 {
     ) external {
         require(
             depositorCoin.balanceOf(msg.sender) >= burnDepositorCoinAmount,
-            "STC: Sender has insuffient DPC funds"
+            "DUSD: Sender has insuffient DEPC funds"
         );
 
         depositorCoin.burn(msg.sender, burnDepositorCoinAmount);
 
         int256 deficitOrSurplusInUsd = _getDeficitOrSurplusInContractInUsd();
-        require(deficitOrSurplusInUsd > 0, "STC: No funds to withdraw");
+        require(deficitOrSurplusInUsd > 0, "DUSD: No funds to withdraw");
 
         uint256 surplusInUsd = uint256(deficitOrSurplusInUsd);
-        WadLib.Wad dpcInUsdPrice = _getDPCinUsdPrice(surplusInUsd);
+        WadLib.Wad dpcInUsdPrice = _getDEPCinUsdPrice(surplusInUsd);
         uint256 refundingUsd = burnDepositorCoinAmount.mulWad(dpcInUsdPrice);
         uint256 refundingEth = refundingUsd / oracle.getPrice();
 
         (bool success, ) = msg.sender.call{value: refundingEth}("");
-        require(success, "STC: Withdraw refund transaction failed");
+        require(success, "DUSD: Withdraw refund transaction failed");
     }
 
     function _getDeficitOrSurplusInContractInUsd()
@@ -131,7 +135,7 @@ contract DepthStable is ERC20 {
         return deficitOrSurplus;
     }
 
-    function _getDPCinUsdPrice(
+    function _getDEPCinUsdPrice(
         uint256 surplusInUsd
     ) private view returns (WadLib.Wad) {
         return WadLib.fromFraction(depositorCoin.totalSupply(), surplusInUsd);

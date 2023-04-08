@@ -72,7 +72,7 @@ describe("DepthStable", function () {
         DepthStable.depositCollateralBuffer({
           value: ethers.utils.parseEther(stableCoinCollateralBuffer.toString()),
         })
-      ).to.be.revertedWith("STC: Initial collateral ratio not met");
+      ).to.be.revertedWith("DUSD: Initial collateral ratio not met");
     });
 
     it("Should allow depositing collateral buffer", async function () {
@@ -125,6 +125,49 @@ describe("DepthStable", function () {
           ethers.utils.parseEther(
             (
               newDepositorTotalSupply - stableCoinCollateralBurnAmount
+            ).toString()
+          )
+        );
+      });
+
+
+
+      // To fix the test, you should calculate the expected new total supply using the same logic as the contract. You can do this by finding the dpcInUsdPrice in your test and then calculating the mintDepositorCoinAmount. Finally, add the mintDepositorCoinAmount to the initial total supply of DepositorCoin to get the expected new total supply. This should match the actual value returned by the contract.
+      it("double deposit", async function () {
+
+        
+        const newDepositorTotalSupply =
+        stableCoinCollateralBuffer * ethUsdPrice;
+        const stableCoinCollateralBurnAmount = newDepositorTotalSupply * 0.2;
+        const amount = 0.000001;
+        const totalSupply = await DepositorCoin.totalSupply();
+        
+        
+        
+        const tx = await DepthStable.depositCollateralBuffer({ value: ethers.utils.parseEther(amount.toString()) });
+        console.log(tx);
+        const receipt = await tx.wait();
+        // const event = receipt.events.find(e => e.event === "DepositorCoinMinted");
+        // const dpcInUsdPrice = event.args.dpcInUsdPrice;
+
+
+
+
+
+        console.log(totalSupply, "Total supplydude");
+        const firstDepositTotal = await DepositorCoin.totalSupply();
+        await DepthStable.depositCollateralBuffer({
+          value: ethers.utils.parseEther(amount.toString()),
+        });
+
+        console.log(ethers.utils.parseEther(amount.toString()), "deposit amount");
+        const totalSupplyafter = await DepositorCoin.totalSupply();
+        console.log(totalSupplyafter, "Total supplydude after");
+
+        expect(await DepositorCoin.totalSupply()).to.equal(
+          ethers.utils.parseEther(
+            (
+              newDepositorTotalSupply + amount
             ).toString()
           )
         );

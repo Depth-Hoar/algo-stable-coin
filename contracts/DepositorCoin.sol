@@ -5,17 +5,17 @@ import {ERC20} from "./ERC20.sol";
 contract DepositorCoin is ERC20 {
     address public owner;
 
-    constructor() ERC20("DepositorCoin", "DPC") {
+    constructor() ERC20("DepositorCoin", "DEPC") {
         owner = msg.sender;
     }
 
     function mint(address to, uint256 amount) external {
-        require(msg.sender == owner, "DPC: Only owner can mint");
+        require(msg.sender == owner, "DEPC: Only owner can mint");
         _mint(to, amount);
     }
 
     function burn(address from, uint256 amount) external {
-        require(msg.sender == owner, "DPC: Only owner can burn");
+        require(msg.sender == owner, "DEPC: Only owner can burn");
         _burn(from, amount);
     }
 }
